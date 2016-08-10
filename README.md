@@ -17,3 +17,4 @@ nodejs + websocket + angular
 ## html 客户端
     http-server -p 8081
 
+>如果需要安装 http-server ：`npm i -g http-server`

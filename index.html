@@ -35,9 +35,7 @@
                 }
                 var events = ['open', 'close', 'message', 'error'];
                 for (var i = 0; i < events.length; i++) {
-                    ws.addEventListener(events[i], function() {
-                        _apply();
-                    })
+                    ws.addEventListener(events[i], _apply);
                 }
 
                 return ws;
