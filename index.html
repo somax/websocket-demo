@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html ng-app="fenixApp">
+
+<head>
+    <title></title>
+</head>
+
+<body>
+    <script src="node_modules/angular/angular.min.js"></script>
+    <section ng-controller="MainController as mc">
+        {{ mc.message.data }}
+    </section>
+    <script>
+    angular.module('fenixApp', [])
+        .factory('WebSocketService', WebSocketService)
+        .factory('MessageService', MessageService)
+        .controller('MainController', MainController);
+
+
+    function WebSocketService($rootScope) {
+        var _webSocketService = {
+            connect: function connect(url, cb) {
+                var ws = new WebSocket(url);
+                cb(ws);
+                ws.addEventListener('close', function(event) {
+                    if (_webSocketService.keepAlive) {
+                        setTimeout(function() {
+                            _webSocketService.connect(event.target.url, cb);
+                        }, 2000)
+                    }
+                })
+
+                function _apply() {
+                    $rootScope.$applyAsync();
+                }
+                var events = ['open', 'close', 'message', 'error'];
+                for (var i = 0; i < events.length; i++) {
+                    ws.addEventListener(events[i], function() {
+                        _apply();
+                    })
+                }
+
+                return ws;
+            },
+            keepAlive: true
+        }
+
+        return _webSocketService;
+
+    }
+
+
+    function MessageService(WebSocketService) {
+        var message = {
+            data: '-----'
+        };
+
+        // WebSocketService.keepAlive = false;
+        WebSocketService.connect("ws://localhost:8080/fenix",
+            function(ws) {
+                window.ws = ws
+                ws.onopen = function(event) {
+                    console.log(event, ws.readyState);
+                    message.data = 'connected!'
+                    ws.send('hello, server!')
+                }
+                ws.onmessage = function(event) {
+                    console.log("onmessage", event);
+                    message.data = event.data;
+                }
+                ws.onclose = function(event) {
+                    console.log(event, ws.readyState);
+                    message.data = 'closed';
+                }
+                ws.onerror = function(event) {
+                    console.error(event);
+                    message.data = 'Error!'
+                }
+            });
+
+        return message;
+    }
+
+    function MainController($scope, MessageService) {
+        var mc = this
+        mc.message = MessageService;
+    }
+    </script>
+</body>
+
+</html>
