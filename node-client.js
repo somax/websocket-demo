@@ -1,15 +1,27 @@
 #!/usr/bin/env node
 
-var WebSocket = require('ws');
-var ws = new WebSocket('ws://localhost:8080/fenix');
- 
-ws.on('open', function open() {
-  ws.send('hello, server....');
-});
- 
-ws.on('message', function(data, flags) {
-  // flags.binary will be set if a binary data is received. 
-  // flags.masked will be set if the data was masked. 
-  console.log(flags.binary ? data.toString() : data);
+const WebSocket = require('ws');
 
-});
+function connect() {
+    console.log('connecting...');
+    let ws = new WebSocket('ws://localhost:8080/echo');
+    let timer;
+    ws.on('open', function open() {
+        console.log('connected!');
+        timer = setInterval(() => ws.send(`hello, server. ${Date.now()}`), 2000);
+    });
+
+    ws.on('close', event => {
+        console.log('lost connection!');
+        clearInterval(timer);
+        setTimeout(connect, 2000)
+    })
+
+    ws.on('message', function(data, flags) {
+        console.log(flags.binary ? data.toString() : data);
+    });
+
+    return ws;
+}
+
+connect();
